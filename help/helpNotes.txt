@@ -1,0 +1,12 @@
+echo 'PS1="> "' > ~/.bashrc
+
+This line of code changes your terminal prompt to a simple > symbol every time you open a new bash session.
+
+How to apply the change
+
+source ~/.bashrc
+
+
+assign volumes: think shared folder
+
+docker run -it --entrypoint=bash -v $(pwd)/test:/app/test python:3.13.11-slim
