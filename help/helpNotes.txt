@@ -19,4 +19,4 @@ git updating repo:
 > git status
 
 
-it commit -m 'pipeline' ---give a name
+git commit -m 'pipeline' ---give a name
