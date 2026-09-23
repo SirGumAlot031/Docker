@@ -36,7 +36,6 @@ git push origin main
 
 
 > cd ..
-> git add .
 > git status
 
 
@@ -52,3 +51,4 @@ docker run -it --rm \
   postgres:18
 
   
+  uv run pgcli -h localhost -p 5432 -u root -d ny_taxi
