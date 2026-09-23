@@ -42,6 +42,16 @@ git push origin main
 git commit -m 'pipeline' ---give a name
 
 
+docker ps 
+
+checks to see what docker files are on. 
+if this is completely blank: This confirms your PostgreSQL database is currently turned off.
+
+
+ ---in the "pipeline" project folder 
+
+---create the postgres db
+
 docker run -it --rm \
   -e POSTGRES_USER="root" \
   -e POSTGRES_PASSWORD="root" \
@@ -50,5 +60,11 @@ docker run -it --rm \
   -p 5432:5432 \
   postgres:18
 
-  
+
+--in a new terminal 
+
+go back to the working repo (pipeline)
+  -- instal  pgcli
+ uv add pgcli
+
   uv run pgcli -h localhost -p 5432 -u root -d ny_taxi

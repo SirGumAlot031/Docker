@@ -11,6 +11,7 @@ dependencies = [
     "pandas>=3.0.5",
     "pgcli>=4.6.0",
     "psycopg2-binary>=2.9.13",
+    "psycopg[binary,pool]>=3.3.5",
     "pyarrow>=25.0.1",
     "sqlalchemy>=2.0.54",
     "tqdm>=4.70.1",
