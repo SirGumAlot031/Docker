@@ -11,9 +11,30 @@ assign volumes: think shared folder
 
 docker run -it --entrypoint=bash -v $(pwd)/test:/app/test python:3.13.11-slim
 
+-------------------------------
 git updating repo:
 
-> git add .
+----in branch (do this)
+
+git add .
+git commit -m "save work before merging"
+
+-----Switch to main. 
+(Your files in VS Code will temporarily revert back to their old state. 
+Don't panic! They are safe on your other branch.)
+
+git checkout main
+
+git merge your-branch-name
+
+-----Push it to GitHub
+
+git push origin main
+
+
+-------------------------------
+
+
 > cd ..
 > git add .
 > git status
