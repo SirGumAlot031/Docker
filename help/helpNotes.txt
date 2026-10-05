@@ -52,13 +52,17 @@ if this is completely blank: This confirms your PostgreSQL database is currently
 
 ---create the postgres db
 
-docker run -it --rm \
+# Run PostgreSQL on the network
+docker run -it \
   -e POSTGRES_USER="root" \
   -e POSTGRES_PASSWORD="root" \
   -e POSTGRES_DB="ny_taxi" \
   -v ny_taxi_postgres_data:/var/lib/postgresql \
   -p 5432:5432 \
+  --network=pg-network \
+  --name pgdatabase \
   postgres:18
+
 
 
 --in a new terminal 
@@ -67,4 +71,11 @@ go back to the working repo (pipeline)
   -- instal  pgcli
  uv add pgcli
 
+
+---to access the database through pgcli run this:
+
   uv run pgcli -h localhost -p 5432 -u root -d ny_taxi
+
+-- start jupyter notebook  
+uv run jupyter notebook
+

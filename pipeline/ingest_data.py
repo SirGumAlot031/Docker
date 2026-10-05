@@ -1,49 +1,9 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
+import click
 import pandas as pd
+from sqlalchemy import create_engine
+from tqdm.auto import tqdm
 
-
-# In[2]:
-
-
-prefix = 'https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/'
-url = f'{prefix}/yellow_tripdata_2021-01.csv.gz'
-url
-
-
-# In[3]:
-
-
-df = pd.read_csv(url)
-
-
-# In[4]:
-
-
-# Display first rows
-df.head()
-
-
-# In[5]:
-
-
-len(df)
-
-
-# In[6]:
-
-
-# Check data types
-df.dtypes
-
-
-# In[7]:
-
-
+# Keep strict data types mapped for accurate schema definitions
 dtype = {
     "VendorID": "Int64",
     "passenger_count": "Int64",
@@ -68,90 +28,59 @@ parse_dates = [
     "tpep_dropoff_datetime"
 ]
 
-df = pd.read_csv(
-    url,
-    dtype=dtype,
-    parse_dates=parse_dates
-)
+@click.command()
+@click.option('--pg-user', default='root', help='PostgreSQL user')
+@click.option('--pg-pass', default='root', help='PostgreSQL password')
+@click.option('--pg-host', default='127.0.0.1', help='PostgreSQL host') # Default updated to bypass proxy tunnels
+@click.option('--pg-port', default=5432, type=int, help='PostgreSQL port')
+@click.option('--pg-db', default='ny_taxi', help='PostgreSQL database name')
+@click.option('--year', default=2021, type=int, help='Year of the data')
+@click.option('--month', default=1, type=int, help='Month of the data')
+@click.option('--target-table', default='yellow_taxi_data', help='Target table name')
+@click.option('--chunksize', default=100000, type=int, help='Chunk size for reading CSV')
+def run(pg_user, pg_pass, pg_host, pg_port, pg_db, year, month, target_table, chunksize):
+    """Ingest NYC taxi data into PostgreSQL database cleanly."""
+    
+    prefix = 'https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/'
+    url = f'{prefix}/yellow_tripdata_{year}-{month:02d}.csv.gz'
 
+    # Fixed: Uses standard 'postgresql://' driver and correctly pulls the 'pg_pass' argument
+    engine = create_engine(f'postgresql://{pg_user}:{pg_pass}@{pg_host}:{pg_port}/{pg_db}')
 
-# In[8]:
+    # Fixed: Pulls 'chunksize' dynamically from the click command line parameter
+    df_iter = pd.read_csv(
+        url,
+        dtype=dtype,
+        parse_dates=parse_dates,
+        iterator=True,
+        chunksize=chunksize,
+        compression='gzip'
+    )
 
+    first = True
 
-df['tpep_pickup_datetime']
+    print(f"Connecting to database {pg_db} on {pg_host}:{pg_port}...")
+    print("Starting ingestion loop...")
+    
+    for df_chunk in tqdm(df_iter):
+        if first:
+            # Replaces the table structure instantly on the first loop execution path
+            df_chunk.head(0).to_sql(
+                name=target_table,
+                con=engine,
+                if_exists='replace',
+                index=False
+            )
+            first = False
 
+        df_chunk.to_sql(
+            name=target_table,
+            con=engine,
+            if_exists='append',
+            index=False
+        )
+        
+    print("Ingestion script completed successfully!")
 
-# In[9]:
-
-
-len(df)
-
-
-# In[10]:
-
-
-get_ipython().system('uv add sqlalchemy "psycopg[binary,pool]"')
-
-
-# In[11]:
-
-
-from sqlalchemy import create_engine
-engine = create_engine('postgresql+psycopg://root:root@localhost:5432/ny_taxi')
-
-
-# In[12]:
-
-
-with engine.connect() as conn:
-    print("Connected successfully!")
-
-
-# In[13]:
-
-
-print(pd.io.sql.get_schema(df, name='yellow_taxi_data', con=engine))
-
-
-# In[14]:
-
-
-df.head(n=0).to_sql(name='yellow_taxi_data', con=engine, if_exists='replace')
-
-
-# In[31]:
-
-
-df_iter = pd.read_csv(
-    url,
-    dtype=dtype,
-    parse_dates=parse_dates,
-    iterator=True,
-    chunksize=100000
-)
-
-
-# In[32]:
-
-
-get_ipython().system('uv add tqdm')
-
-
-# In[33]:
-
-
-from tqdm.auto import tqdm
-
-
-# In[34]:
-
-
-for df_chunk in tqdm(df_iter):
-    df_chunk.to_sql(name='yellow_taxi_data', con=engine, if_exists='append')
-
-
-# In[ ]:
-
-
-
-
+if __name__ == '__main__':
+    run()
